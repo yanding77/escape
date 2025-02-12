@@ -15,48 +15,47 @@ import java.util.*;
  * An example of reading a game configuration file and storing the information in this
  * data object. Using this object, you can get the information needed to create your
  * game.
- * 
+ *
  * MODIFIABLE: YES
  * MOVEABLE: NO
  * REQUIRED: NO
- * 
+ *
  * @see EscapeGameBuilder#makeGameManager()
  */
 @XmlRootElement
 public class EscapeGameInitializer
 {
 	private CoordinateType coordinateType;
-	
+
 	// Board items
 	private int xMax, yMax;
 	private LocationInitializer[] locationInitializers;
-	
+
 	// Piece items
 	private PieceTypeDescriptor[] pieceTypes;
-	
+
 	// Rule items
 	private RuleDescriptor[] rules;
-    
-    public EscapeGameInitializer()
-    {
-        // Needed for JAXB
-    }
+	private List<String> players;
+	public EscapeGameInitializer() {
+		this.players = new ArrayList<>();
+	}
 
-    /**
-     * @return the coordinateType
-     */
-    public CoordinateType getCoordinateType()
-    {
-        return coordinateType;
-    }
+	/**
+	 * @return the coordinateType
+	 */
+	public CoordinateType getCoordinateType()
+	{
+		return coordinateType;
+	}
 
-    /**
-     * @param coordinateType the coordinateType to set
-     */
-    public void setCoordinateType(CoordinateType coordinateType)
-    {
-        this.coordinateType = coordinateType;
-    }
+	/**
+	 * @param coordinateType the coordinateType to set
+	 */
+	public void setCoordinateType(CoordinateType coordinateType)
+	{
+		this.coordinateType = coordinateType;
+	}
 
 	/**
 	 * @return the xMax
@@ -145,9 +144,14 @@ public class EscapeGameInitializer
 	public String toString()
 	{
 		return "EscapeGameInitializer [xMax=" + xMax + ", yMax=" + yMax
-		    + ", coordinateType=" + coordinateType + ", locationInitializers="
-		    + Arrays.toString(locationInitializers) + ", types="
-		    + Arrays.toString(pieceTypes) + "]";
+				+ ", coordinateType=" + coordinateType + ", locationInitializers="
+				+ Arrays.toString(locationInitializers) + ", types="
+				+ Arrays.toString(pieceTypes) + "]";
 	}
-	
+	public List<String> getPlayers() {
+		return players;
+	}
+	public void setPlayers(List<String> players) {
+		this.players = players;
+	}
 }

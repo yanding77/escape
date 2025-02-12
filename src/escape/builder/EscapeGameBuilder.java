@@ -8,11 +8,13 @@ package escape.builder;
 
 import econfig.*;
 import escape.*;
+import escape.required.*;
 import org.antlr.v4.runtime.*;
 
 import javax.xml.bind.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
+import java.util.List;
 
 /**
  * This class builds an instance of an EscapeGameManager from a configuration
@@ -25,16 +27,16 @@ import java.io.*;
  * in the lib directory of this IntelliJ project.
  *
  * NOTE: The Escape Configuration Tool was built with Java 17.
- * 
+ *
  * MODIFIABLE: YES
  * MOVEABLE: NO
  * REQUIRED: YES
- * 
+ *
  * You must change this class to be able to get the data from the configurtion
  * file and implement the makeGameManager() method. You may not change the signature
  * of that method or the constructor for this class. You can change the file any 
  * other way that you need to.
- * 
+ *
  * You don't have to use the EscapeGameInitializer object if
  * you have a way that better suits your design and capabilities. Don't go down
  * a rathole, however, in order to use something different. This implementation
@@ -44,34 +46,34 @@ import java.io.*;
  */
 public class EscapeGameBuilder
 {
-    private final EscapeGameInitializer gameInitializer;
-    
-    /**
-     * The constructor takes a file that points to the Escape game
-     * configuration file. It should get the necessary information 
-     * to be ready to create the game manager specified by the configuration
-     * file and other configuration files that it links to.
-     * @param fileName the file for the Escape game configuration file (.egc).
-     * @throws Exception on any errors
-     */
-    public EscapeGameBuilder(String fileName) throws Exception
-    {
-    	String xmlConfiguration = getXmlConfiguration(fileName);
-    	// Uncomment the next instruction if you want to see the XML
-    	// System.err.println(xmlConfiguration);
-        gameInitializer = unmarshalXml(xmlConfiguration);
-    }
+	private final EscapeGameInitializer gameInitializer;
+
+	/**
+	 * The constructor takes a file that points to the Escape game
+	 * configuration file. It should get the necessary information
+	 * to be ready to create the game manager specified by the configuration
+	 * file and other configuration files that it links to.
+	 * @param fileName the file for the Escape game configuration file (.egc).
+	 * @throws Exception on any errors
+	 */
+	public EscapeGameBuilder(String fileName) throws Exception
+	{
+		String xmlConfiguration = getXmlConfiguration(fileName);
+		// Uncomment the next instruction if you want to see the XML
+		// System.err.println(xmlConfiguration);
+		gameInitializer = unmarshalXml(xmlConfiguration);
+	}
 
 	/**
 	 * Take the .egc file contents and turn it into XML.
 	 * @param fileName the input configuration (.egc) file
-	 * @return the XML data needed to 
+	 * @return the XML data needed to
 	 * @throws IOException
 	 */
 	private String getXmlConfiguration(String fileName) throws IOException
 	{
 		EscapeConfigurator configurator = new EscapeConfigurator();
-    	return configurator.makeConfiguration(CharStreams.fromFileName(fileName));
+		return configurator.makeConfiguration(CharStreams.fromFileName(fileName));
 	}
 
 	/**
@@ -82,11 +84,11 @@ public class EscapeGameBuilder
 	private EscapeGameInitializer unmarshalXml(String xmlConfiguration) throws JAXBException
 	{
 		JAXBContext contextObj = JAXBContext.newInstance(EscapeGameInitializer.class);
-        Unmarshaller mub = contextObj.createUnmarshaller();
-        return (EscapeGameInitializer)mub.unmarshal(
-            	new StreamSource(new StringReader(xmlConfiguration)));
+		Unmarshaller mub = contextObj.createUnmarshaller();
+		return (EscapeGameInitializer)mub.unmarshal(
+				new StreamSource(new StringReader(xmlConfiguration)));
 	}
-	
+
 	/**
 	 * Getter for the gameInitializer. Can be used to examine it after the builder
 	 * creates it.
@@ -96,16 +98,23 @@ public class EscapeGameBuilder
 	{
 		return gameInitializer;
 	}
-    
-    /***********************************************************************
-     * Once the EscapeGameIniializer is constructed, this method creates the
-     * EscapeGameManager instance. You use the gameInitializer object to get
+
+	/***********************************************************************
+	 * Once the EscapeGameIniializer is constructed, this method creates the
+	 * EscapeGameManager instance. You use the gameInitializer object to get
 	 * all of the information you need to create your game.
-     * @return the game instance
-     ***********************************************************************/
-    public EscapeGameManager makeGameManager()
-    {
-    	// >>> YOU MUST IMPLEMENT THIS METHOD<<<
-    	return null;
-    }
+	 * @return the game instance
+	 ***********************************************************************/
+	public EscapeGameManager makeGameManager()
+	{
+		if (gameInitializer == null) {
+			throw new EscapeException("Game initializer is not properly loaded.");
+			}
+		int xMax = gameInitializer.getxMax();
+		int yMax = gameInitializer.getyMax();
+		Coordinate.CoordinateType coordinateType = gameInitializer.getCoordinateType();
+		List<String> players = gameInitializer.getPlayers(); // Ensure this is an array
+
+		return new EscapeGameManagerImpl<>(xMax, yMax, coordinateType, players);
+	}
 }
