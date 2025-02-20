@@ -14,21 +14,21 @@ import java.util.*;
  * is provided as an example that can be used to initialize instances of a GameManager
  * via the EscapeBuilder. You do not have to use this, but are encouraged to do so.
  *
- * However, you do need to be able to load the appropriate named data from the 
+ * However, you do need to be able to load the appropriate named data from the
  * configuration file in order to create a game correctly.
- * 
+ *
  * MODIFIABLE: YES
  * MOVEABLE: YES
  * REQUIRED: NO
  */
 public class PieceTypeDescriptor
 {
-	private PieceName pieceName;
+    private PieceName pieceName;
     private MovementPattern movementPattern;
     private PieceAttribute[] attributes;
-    
+
     public PieceTypeDescriptor() {}
-    
+
     /**
      * @return the pieceName
      */
@@ -71,28 +71,28 @@ public class PieceTypeDescriptor
     {
         this.attributes = attributes;
     }
-    
-    /**
-	 * See if this descriptor has the specified attribute
-	 * @param id the attribute ID
-	 * @return the attribute or null if the piece has none
-	 */
-	public PieceAttribute getAttribute(PieceAttributeID id)
-	{
-		Optional<PieceAttribute> attr = 
-			Arrays.stream(attributes)
-				.filter(a -> a.getId().equals(id))
-				.findFirst();
-		return attr.isPresent() ? attr.get() : null;
-	}
 
-	/*
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString()
-	{
-		return "PieceTypeInitializer [pieceName=" + pieceName + ", movementPattern="
-		    + movementPattern + ", attributes=" + Arrays.toString(attributes) + "]";
-	}
+    /**
+     * See if this descriptor has the specified attribute
+     * @param id the attribute ID
+     * @return the attribute or null if the piece has none
+     */
+    public PieceAttribute getAttribute(PieceAttributeID id)
+    {
+        Optional<PieceAttribute> attr =
+                Arrays.stream(attributes)
+                        .filter(a -> a.getId().equals(id))
+                        .findFirst();
+        return attr.isPresent() ? attr.get() : null;
+    }
+
+    /*
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString()
+    {
+        return "PieceTypeInitializer [pieceName=" + pieceName + ", movementPattern="
+                + movementPattern + ", attributes=" + Arrays.toString(attributes) + "]";
+    }
 }

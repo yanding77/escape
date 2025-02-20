@@ -4,15 +4,15 @@ yMax : 0
 Players : John Paul
 
 Locations :
-	(1, 4)  Paul frog
-	(4, 4)  John snail
-	(3, 1)  Paul bird
-	(4, 1)  John horse
+	(1, 4)  Paul FROG
+	(4, 4)  John SNAIL
+	(3, 1)  Paul BIRD
+	(4, 1)  John HORSE
 
 Piece descriptors :
 	SNAIL orthogonal [distance 1]
 	DOG orthogonal [distance 5]
 	HORSE orthogonal [distance 7]
-	bird orthogonal [fly, distance 5]
-	frog orthogonal [distance 3]
+	BIRD orthogonal [fly, distance 5]
+	FROG orthogonal [distance 3]
 
