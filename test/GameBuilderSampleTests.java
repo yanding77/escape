@@ -71,9 +71,6 @@ public class GameBuilderSampleTests {
         assertEquals(coordinate.getRow(), escapeCoordinate.getRow());
         assertEquals(coordinate.getColumn(), escapeCoordinate.getColumn());
 
-        //alternatively you can have CoordinateImpl override the equals method from the Object class and
-        // have your assert statements directly compare coordinate values.
-        //assertEquals(coordinate, escapeGameManager.makeCoordinate(5,4));
     }
 
     @Test
@@ -84,7 +81,6 @@ public class GameBuilderSampleTests {
         }catch(Exception ex){
             fail("Exception from builder: " + ex.getMessage());
         }
-        // CoordinateImpl(10,10) is out of bounds. makeCoordinate method should return null.
         assertEquals(null, escapeGameManager.makeCoordinate(10,10));
     }
 

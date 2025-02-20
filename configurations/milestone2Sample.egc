@@ -1,0 +1,18 @@
+Coordinate type : SQUARE
+xMax : 0
+yMax : 0
+Players : John Paul
+
+Locations :
+	(1, 4)  Paul frog
+	(4, 4)  John snail
+	(3, 1)  Paul bird
+	(4, 1)  John horse
+
+Piece descriptors :
+	SNAIL orthogonal [distance 1]
+	DOG orthogonal [distance 5]
+	HORSE orthogonal [distance 7]
+	bird orthogonal [fly, distance 5]
+	frog orthogonal [distance 3]
+
