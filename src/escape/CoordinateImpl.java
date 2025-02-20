@@ -31,6 +31,10 @@ public class CoordinateImpl implements Coordinate {
         CoordinateImpl that = (CoordinateImpl) obj;
         return row == that.row && column == that.column;
     }
+    @Override
+    public int hashCode() {
+        return 31 * row + column;
+    }
 }
 
 

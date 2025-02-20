@@ -1,6 +1,10 @@
+
 import escape.*;
-import escape.builder.*;
 import escape.required.*;
+import escape.builder.*;
+import escape.builder.EscapeGameBuilder;
+import escape.required.Coordinate;
+import escape.required.GameStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

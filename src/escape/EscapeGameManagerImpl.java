@@ -117,35 +117,60 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
      * Check if the piece can move from "from" to "to" using orthogonal rules
      * plus DISTANCE/FLY.
      */
-    private boolean isLegalMove(EscapePieceImpl piece, C from, C to)
-    {
-        // For milestone2, we only support ORTHOGONAL.
+    private boolean isLegalMove(EscapePieceImpl piece, C from, C to) {
+        // Only support ORTHOGONAL movement
         if (piece.getMovementPattern() != MovementPattern.ORTHOGONAL) {
             return false;
         }
 
-        // If the piece can FLY, we ignore path-blocking (and everything is CLEAR anyway).
-        // Check distance with Manhattan distance for orth moves:
+        // Move must be strictly horizontal or vertical (no diagonal)
+        if (from.getRow() != to.getRow() && from.getColumn() != to.getColumn()) {
+            return false;
+        }
+
         int maxDist = piece.getDistance();
-        // If no DISTANCE attribute is set, you might interpret it as 1 or unlimited.
         if (maxDist <= 0) {
             maxDist = 1;
         }
 
-        int manhattanDist =
-                Math.abs(from.getRow() - to.getRow()) + Math.abs(from.getColumn() - to.getColumn());
-
-        if (manhattanDist > maxDist) {
+        int dist = Math.abs(from.getRow() - to.getRow()) + Math.abs(from.getColumn() - to.getColumn());
+        if (dist > maxDist) {
             return false;
         }
 
-        // If the piece has FLY => no need to BFS check any blocking
+        // If the piece can fly, skip checking intermediate squares
         if (piece.canFly()) {
             return true;
         }
-        // else BFS to ensure there's a connected path in orth steps (all CLEAR in milestone2).
-        return canReachWithOrthSteps(from, to, maxDist);
+
+        // For non-flying pieces, check that every intermediate square is clear.
+        if (from.getRow() == to.getRow()) {
+            // Horizontal move
+            int row = from.getRow();
+            int startCol = Math.min(from.getColumn(), to.getColumn());
+            int endCol = Math.max(from.getColumn(), to.getColumn());
+            for (int col = startCol + 1; col < endCol; col++) {
+                if (board.getPieceAt(new CoordinateImpl(row, col)) != null) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (from.getColumn() == to.getColumn()) {
+            // Vertical move
+            int col = from.getColumn();
+            int startRow = Math.min(from.getRow(), to.getRow());
+            int endRow = Math.max(from.getRow(), to.getRow());
+            for (int row = startRow + 1; row < endRow; row++) {
+                if (board.getPieceAt(new CoordinateImpl(row, col)) != null) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
+
 
     /**
      * For non-FLY pieces, you can do a BFS or DFS to ensure "from" can reach "to" via orth steps
