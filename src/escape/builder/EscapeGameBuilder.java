@@ -61,9 +61,9 @@ public class EscapeGameBuilder
 		// Process location initializers.
 		if (gameInitializer.getLocationInitializers() != null) {
 			for (LocationInitializer loc : gameInitializer.getLocationInitializers()) {
-				// For milestone3, if a location initializer has a pieceName, place the piece.
-				// Otherwise, if it indicates a special location (BLOCK/EXIT), then (once Board supports it)
-				// you could call board.setLocationType(...).
+				Coordinate coord = new CoordinateImpl(loc.x, loc.y);
+
+				// If location initializer has a pieceName and player, place the piece.
 				if (loc.pieceName != null && loc.player != null) {
 					PieceTypeDescriptor desc = null;
 					if (gameInitializer.getPieceTypes() != null) {
@@ -78,13 +78,11 @@ public class EscapeGameBuilder
 						throw new EscapeException("Unknown piece type: " + loc.pieceName);
 					}
 					EscapePieceImpl piece = new EscapePieceImpl(loc.player, desc);
-					board.putPieceAt(piece, new CoordinateImpl(loc.x, loc.y));
+					board.putPieceAt(piece, coord);
 				}
-				else {
-					// If location initializer indicates a special location (e.g., BLOCK or EXIT),
-					// and if your configuration provides such info via a getter (e.g., loc.getLocationType()),
-					// then set it on the board:
-					// board.setLocationType(new CoordinateImpl(loc.x, loc.y), LocationType.valueOf(loc.getLocationType()));
+				// Otherwise, if a special location type is provided, set it on the board.
+				else if (loc.locationType != null) {
+					board.setLocationType(coord, escape.LocationType.valueOf(loc.locationType.name()));
 				}
 			}
 		}
@@ -92,6 +90,8 @@ public class EscapeGameBuilder
 		RuleDescriptor[] ruleDescriptors = gameInitializer.getRules();
 		return new EscapeGameManagerImpl<>(xMax, yMax, coordinateType, players, board, buildPieceTypes(), ruleDescriptors);
 	}
+
+
 
 	private Map<PieceName, PieceTypeDescriptor> buildPieceTypes() {
 		Map<PieceName, PieceTypeDescriptor> pieceTypes = new HashMap<>();

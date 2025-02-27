@@ -103,7 +103,6 @@ public class Milestone3SampleTestsSQUARE {
     }
 
 
-/*
     @Test
     void targetLocationOccupied() {
         // Move HORSE to a coordinate that already contains a piece
@@ -114,8 +113,6 @@ public class Milestone3SampleTestsSQUARE {
         assertFalse(gameStatus.isValidMove());
         assertEquals(gameStatus.finalLocation(), from);
     }
-
-     */
 
 
 }

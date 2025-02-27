@@ -1,5 +1,6 @@
 package escape;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,4 +76,8 @@ public class Board
     {
         locationMap.put(c, type);
     }
+    public Collection<EscapePiece> getAllPieces() {
+        return pieceMap.values();
+    }
+
 }

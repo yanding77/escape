@@ -61,7 +61,7 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
             return invalidMove(from);
         }
 
-        // 2) Check there is a piece at 'from' belonging to the current player.
+        // 2) Check that a piece exists at 'from' belonging to the current player.
         EscapePiece piece = board.getPieceAt(from);
         if (piece == null) {
             return invalidMove(from);
@@ -70,43 +70,71 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
         if (!piece.getPlayer().equals(currentPlayer)) {
             return invalidMove(from);
         }
-        // 3) Cannot move onto a square that already has a piece.
+        // 3) Cannot move onto an occupied square.
         if (board.getPieceAt(to) != null) {
             return invalidMove(from);
         }
 
-        // 4) Validate movement based on board type and piece movement pattern.
+        // 4) Validate movement.
         if (!isLegalMove((EscapePieceImpl) piece, from, to)) {
             return invalidMove(from);
         }
 
-        // 5) Check destination location type.
+        // 5) Check for EXIT along the move path.
+        boolean exitEncountered = false;
+        int rowDiff = to.getRow() - from.getRow();
+        int colDiff = to.getColumn() - from.getColumn();
+        int steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+        if (steps > 1) {
+            int stepRow = rowDiff / steps;
+            int stepCol = colDiff / steps;
+            int currRow = from.getRow();
+            int currCol = from.getColumn();
+            for (int i = 1; i < steps; i++) {
+                currRow += stepRow;
+                currCol += stepCol;
+                Coordinate intermediate = new CoordinateImpl(currRow, currCol);
+                if (board.getLocationType(intermediate) == LocationType.EXIT) {
+                    exitEncountered = true;
+                    break;
+                }
+            }
+        }
+
+        // 6) Check destination location type.
         LocationType destType = board.getLocationType(to);
         boolean pieceExits = false;
         if (destType == LocationType.BLOCK) {
             return invalidMove(from);
         }
-        if (destType == LocationType.EXIT) {
+        if (destType == LocationType.EXIT || exitEncountered) {
             pieceExits = true;
         }
 
-        // 6) Process move.
+        // 7) Process the move.
         board.removePieceAt(from);
         if (pieceExits) {
             int currentScore = scores.getOrDefault(currentPlayer, 0);
             scores.put(currentPlayer, currentScore + ((EscapePieceImpl) piece).getValue());
-            // The piece exits; do not place it on the board.
+            to = null;  // Piece exits the game.
         }
         else {
             board.putPieceAt(piece, to);
         }
 
-        // 7) Check game-end conditions (e.g., SCORE rule).
+        // 8) Check game-end conditions for the mover.
         GameStatus.MoveResult result = checkGameEnd(currentPlayer);
 
-        // 8) Advance turn if game not ended.
+        // 9) Advance turn if game not ended.
         if (result == GameStatus.MoveResult.NONE) {
+            // Advance turn to next player.
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+            // Check if the next player has any pieces; if not, the opponent wins.
+            String nextPlayer = players.get(currentPlayerIndex);
+            if (!playerHasPieces(nextPlayer)) {
+                result = GameStatus.MoveResult.WIN;
+                // Optionally, you might want to set currentPlayerIndex to the winning player.
+            }
         }
 
         return new GameStatusImpl(true, result, to);
@@ -141,8 +169,11 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
     }
 
     /**
-     * Validate the move. For SQUARE boards, support ORTHOGONAL or DIAGONAL moves.
-     * For HEX boards, support LINEAR moves along one of six directions.
+     * Validate the move.
+     * For SQUARE boards, supports ORTHOGONAL or DIAGONAL moves.
+     * For HEX boards, supports LINEAR moves.
+     * For non-flying pieces, intermediate BLOCK locations are illegal.
+     * (EXIT locations are allowed, as the exit behavior is handled in move().)
      */
     private boolean isLegalMove(EscapePieceImpl piece, C from, C to)
     {
@@ -154,25 +185,20 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
         }
 
         if (coordinateType == Coordinate.CoordinateType.SQUARE) {
-            // For SQUARE boards, allow:
-            // - ORTHOGONAL: either rowDiff==0 or colDiff==0.
-            // - DIAGONAL: absolute differences equal.
             if (piece.getMovementPattern() == MovementPattern.ORTHOGONAL) {
                 if (rowDiff != 0 && colDiff != 0) return false;
             }
             else if (piece.getMovementPattern() == MovementPattern.DIAGONAL) {
-                // Allow both orthogonal and diagonal moves.
-                if (rowDiff != 0 && colDiff != 0 && Math.abs(rowDiff) != Math.abs(colDiff)) return false;
+                if (rowDiff == 0 || colDiff == 0) return false;
+                if (Math.abs(rowDiff) != Math.abs(colDiff)) return false;
             }
+
             else {
-                // Unsupported movement pattern for square board.
                 return false;
             }
-            // Check distance.
             if (Math.max(Math.abs(rowDiff), Math.abs(colDiff)) > maxDist) {
                 return false;
             }
-            // If the piece cannot fly, ensure intermediate squares are clear
             if (!piece.canFly()) {
                 int steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
                 int stepRow = (steps == 0) ? 0 : rowDiff / steps;
@@ -183,9 +209,8 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
                     currRow += stepRow;
                     currCol += stepCol;
                     Coordinate intermediate = new CoordinateImpl(currRow, currCol);
-                    // Cannot pass over BLOCK or EXIT.
-                    LocationType lt = board.getLocationType(intermediate);
-                    if (lt == LocationType.BLOCK || lt == LocationType.EXIT) {
+                    // For non-flyers, BLOCK locations are illegal.
+                    if (board.getLocationType(intermediate) == LocationType.BLOCK) {
                         return false;
                     }
                     if (board.getPieceAt(intermediate) != null) {
@@ -196,13 +221,10 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
             return true;
         }
         else if (coordinateType == Coordinate.CoordinateType.HEX) {
-            // For HEX boards, we assume LINEAR movement.
-            // Define six hex directions.
             int[][] hexDirs = { {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0} };
             boolean validDir = false;
             int steps = 0;
             for (int[] d : hexDirs) {
-                // Check if the move is along this direction.
                 if (d[0] != 0) {
                     double factor = (double) rowDiff / d[0];
                     if (factor > 0 && Math.abs(factor - Math.round(factor)) < 0.0001) {
@@ -226,7 +248,6 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
             if (!validDir || steps > maxDist) {
                 return false;
             }
-            // For non-flyers, check intermediate squares.
             if (!piece.canFly()) {
                 int stepRow = rowDiff / steps;
                 int stepCol = colDiff / steps;
@@ -236,8 +257,7 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
                     currRow += stepRow;
                     currCol += stepCol;
                     Coordinate intermediate = new CoordinateImpl(currRow, currCol);
-                    LocationType lt = board.getLocationType(intermediate);
-                    if (lt == LocationType.BLOCK || lt == LocationType.EXIT) {
+                    if (board.getLocationType(intermediate) == LocationType.BLOCK) {
                         return false;
                     }
                     if (board.getPieceAt(intermediate) != null) {
@@ -252,11 +272,12 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
 
     /**
      * Check game-end conditions using rule descriptors.
-     * For example, if a rule with ruleId SCORE exists and the current player's score
-     * is at or above its ruleValue, then the current player wins.
+     * In addition to a SCORE rule, if the next player (whose turn it is) has no pieces,
+     * then the opponent (the player who just moved) wins.
      */
     private GameStatus.MoveResult checkGameEnd(String currentPlayer)
     {
+        // Check SCORE rule.
         if (ruleDescriptors != null) {
             for (RuleDescriptor rd : ruleDescriptors) {
                 if (rd.ruleId == Rule.RuleID.SCORE) {
@@ -265,10 +286,39 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
                         return GameStatus.MoveResult.WIN;
                     }
                 }
-                // Additional rules (e.g., no moves available, tie) can be added here.
+            }
+        }
+        // Also, if the current mover has no pieces left, they lose.
+        if (!playerHasPieces(currentPlayer)) {
+            String opponent = getOpponent(currentPlayer);
+            int currentScore = scores.getOrDefault(currentPlayer, 0);
+            int opponentScore = scores.getOrDefault(opponent, 0);
+            if (currentScore >= opponentScore) {
+                return GameStatus.MoveResult.WIN;
+            } else {
+                return GameStatus.MoveResult.LOSE;
             }
         }
         return GameStatus.MoveResult.NONE;
+    }
+
+    private boolean playerHasPieces(String player) {
+        // Assuming Board.java has a method to return all pieces.
+        for (EscapePiece piece : board.getAllPieces()) {
+            if (piece.getPlayer().equals(player)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getOpponent(String currentPlayer) {
+        for (String p : players) {
+            if (!p.equals(currentPlayer)) {
+                return p;
+            }
+        }
+        return currentPlayer; // fallback
     }
 
     // --- Getters if needed ---

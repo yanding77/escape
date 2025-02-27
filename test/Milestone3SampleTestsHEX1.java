@@ -154,8 +154,6 @@ public class Milestone3SampleTestsHEX1 {
         assertNull(status.finalLocation());
     }
 
-    // The following test will be considered for extra credit
-    /*
     @Test
     void testMoveOverExitLocationExitsPiece() {
         // Move onto an EXIT location -> piece exits the game.
@@ -166,7 +164,7 @@ public class Milestone3SampleTestsHEX1 {
         assertTrue(status.isValidMove());
         assertNull(status.finalLocation());
     }
-    */
+
 
 
     /* GAME END RULE tests; based on Milestone3SampleTestsHEX1.ecg */
