@@ -1,0 +1,31 @@
+Coordinate type : SQUARE
+xMax : 0
+yMax : 0
+Players : playerA playerB
+
+Locations :
+	(3, -2) playerA HORSE
+	(-1, 0) playerA FROG
+	(-1, 4) playerA BIRD
+	(-2, -2) playerB DOG
+	(0, 3) playerB SNAIL
+	(0, 1) playerB BIRD
+
+	 /* BLOCK */
+     (-1, 1) block
+     (-2, 3) block
+
+     /* EXIT */
+     (-3, 5) exit
+     (-4, 0) exit
+
+Piece descriptors :
+	HORSE diagonal [distance 5]
+	FROG orthogonal [distance 4]
+	BIRD diagonal [fly, distance 4]
+	DOG orthogonal [distance 2]
+	SNAIL orthogonal [distance 6]
+
+Rules :
+	SCORE 5
+

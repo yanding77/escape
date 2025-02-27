@@ -4,7 +4,8 @@ import escape.required.*;
 import escape.required.Coordinate.CoordinateType;
 import escape.required.EscapePiece.*;
 import escape.builder.PieceTypeDescriptor;
-
+import escape.builder.RuleDescriptor;
+import escape.required.Rule;
 import java.util.*;
 
 public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameManager<C>
@@ -15,8 +16,12 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
     private final List<String> players;
     private int currentPlayerIndex = 0;
 
-    private final Board board;  // The new board object
+    private final Board board;
     private final Map<PieceName, PieceTypeDescriptor> pieceTypes;
+    private final RuleDescriptor[] ruleDescriptors;  // Game rules from configuration
+
+    // Track scores for each player.
+    private final Map<String, Integer> scores = new HashMap<>();
 
     public EscapeGameManagerImpl(
             int xMax,
@@ -24,7 +29,8 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
             CoordinateType coordinateType,
             List<String> players,
             Board board,
-            Map<PieceName, PieceTypeDescriptor> pieceTypes)
+            Map<PieceName, PieceTypeDescriptor> pieceTypes,
+            RuleDescriptor[] ruleDescriptors)
     {
         this.xMax = xMax;
         this.yMax = yMax;
@@ -32,13 +38,15 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
         this.players = new ArrayList<>(players);
         this.board = board;
         this.pieceTypes = pieceTypes;
+        this.ruleDescriptors = ruleDescriptors;
+        for (String player : players) {
+            scores.put(player, 0);
+        }
     }
 
     @Override
     public C makeCoordinate(int x, int y)
     {
-        // For milestone2, return null if it's not a valid "positive index" location.
-        // If you want to allow out-of-bounds coords in future, you can adapt this.
         if (!board.isInBounds(x, y)) {
             return null;
         }
@@ -48,39 +56,60 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
     @Override
     public GameStatus move(C from, C to)
     {
-        // 1) Check bounds
+        // 1) Check bounds.
         if (!isValidCoordinate(from) || !isValidCoordinate(to)) {
             return invalidMove(from);
         }
 
-        // 2) Check there's a piece at 'from' that belongs to current player
+        // 2) Check there is a piece at 'from' belonging to the current player.
         EscapePiece piece = board.getPieceAt(from);
         if (piece == null) {
             return invalidMove(from);
         }
-
-        String currentPlayerName = players.get(currentPlayerIndex);
-        if (!piece.getPlayer().equals(currentPlayerName)) {
+        String currentPlayer = players.get(currentPlayerIndex);
+        if (!piece.getPlayer().equals(currentPlayer)) {
             return invalidMove(from);
         }
-
+        // 3) Cannot move onto a square that already has a piece.
         if (board.getPieceAt(to) != null) {
             return invalidMove(from);
         }
-        // 3) Validate the movement (ORTHOGONAL, DISTANCE, FLY)
+
+        // 4) Validate movement based on board type and piece movement pattern.
         if (!isLegalMove((EscapePieceImpl) piece, from, to)) {
             return invalidMove(from);
         }
 
-        // 4) If valid, move the piece
+        // 5) Check destination location type.
+        LocationType destType = board.getLocationType(to);
+        boolean pieceExits = false;
+        if (destType == LocationType.BLOCK) {
+            return invalidMove(from);
+        }
+        if (destType == LocationType.EXIT) {
+            pieceExits = true;
+        }
+
+        // 6) Process move.
         board.removePieceAt(from);
-        board.putPieceAt(piece, to);
+        if (pieceExits) {
+            int currentScore = scores.getOrDefault(currentPlayer, 0);
+            scores.put(currentPlayer, currentScore + ((EscapePieceImpl) piece).getValue());
+            // The piece exits; do not place it on the board.
+        }
+        else {
+            board.putPieceAt(piece, to);
+        }
 
-        // 5) Advance the player turn
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        // 7) Check game-end conditions (e.g., SCORE rule).
+        GameStatus.MoveResult result = checkGameEnd(currentPlayer);
 
-        // 6) Return GameStatus => isValidMove=true, MoveResult=NONE, finalLocation=to
-        return new GameStatusImpl(true, GameStatus.MoveResult.NONE, to);
+        // 8) Advance turn if game not ended.
+        if (result == GameStatus.MoveResult.NONE) {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        }
+
+        return new GameStatusImpl(true, result, to);
     }
 
     @Override
@@ -91,17 +120,15 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
 
     @Override
     public GameObserver addObserver(GameObserver observer) {
-        // Not needed for milestone2
         throw new EscapeException("Not implemented");
     }
 
     @Override
     public GameObserver removeObserver(GameObserver observer) {
-        // Not needed for milestone2
         throw new EscapeException("Not implemented");
     }
 
-    // -------- Helper methods ----------
+    // --- Helper methods ---
 
     private boolean isValidCoordinate(C c)
     {
@@ -114,116 +141,134 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
     }
 
     /**
-     * Check if the piece can move from "from" to "to" using orthogonal rules
-     * plus DISTANCE/FLY.
+     * Validate the move. For SQUARE boards, support ORTHOGONAL or DIAGONAL moves.
+     * For HEX boards, support LINEAR moves along one of six directions.
      */
-    private boolean isLegalMove(EscapePieceImpl piece, C from, C to) {
-        // Only support ORTHOGONAL movement
-        if (piece.getMovementPattern() != MovementPattern.ORTHOGONAL) {
-            return false;
-        }
-
-        // Move must be strictly horizontal or vertical (no diagonal)
-        if (from.getRow() != to.getRow() && from.getColumn() != to.getColumn()) {
-            return false;
-        }
-
+    private boolean isLegalMove(EscapePieceImpl piece, C from, C to)
+    {
+        int rowDiff = to.getRow() - from.getRow();
+        int colDiff = to.getColumn() - from.getColumn();
         int maxDist = piece.getDistance();
         if (maxDist <= 0) {
             maxDist = 1;
         }
 
-        int dist = Math.abs(from.getRow() - to.getRow()) + Math.abs(from.getColumn() - to.getColumn());
-        if (dist > maxDist) {
-            return false;
-        }
-
-        // If the piece can fly, skip checking intermediate squares
-        if (piece.canFly()) {
-            return true;
-        }
-
-        // For non-flying pieces, check that every intermediate square is clear.
-        if (from.getRow() == to.getRow()) {
-            // Horizontal move
-            int row = from.getRow();
-            int startCol = Math.min(from.getColumn(), to.getColumn());
-            int endCol = Math.max(from.getColumn(), to.getColumn());
-            for (int col = startCol + 1; col < endCol; col++) {
-                if (board.getPieceAt(new CoordinateImpl(row, col)) != null) {
-                    return false;
-                }
+        if (coordinateType == Coordinate.CoordinateType.SQUARE) {
+            // For SQUARE boards, allow:
+            // - ORTHOGONAL: either rowDiff==0 or colDiff==0.
+            // - DIAGONAL: absolute differences equal.
+            if (piece.getMovementPattern() == MovementPattern.ORTHOGONAL) {
+                if (rowDiff != 0 && colDiff != 0) return false;
             }
-            return true;
-        } else if (from.getColumn() == to.getColumn()) {
-            // Vertical move
-            int col = from.getColumn();
-            int startRow = Math.min(from.getRow(), to.getRow());
-            int endRow = Math.max(from.getRow(), to.getRow());
-            for (int row = startRow + 1; row < endRow; row++) {
-                if (board.getPieceAt(new CoordinateImpl(row, col)) != null) {
-                    return false;
-                }
+            else if (piece.getMovementPattern() == MovementPattern.DIAGONAL) {
+                // Allow both orthogonal and diagonal moves.
+                if (rowDiff != 0 && colDiff != 0 && Math.abs(rowDiff) != Math.abs(colDiff)) return false;
             }
-            return true;
-        }
-
-        return false;
-    }
-
-
-    /**
-     * For non-FLY pieces, you can do a BFS or DFS to ensure "from" can reach "to" via orth steps
-     * within 'maxDist'.
-     * Since all squares are CLEAR in milestone2, this is mostly just checking that the
-     * Manhattan distance is feasible. But let's do a BFS for completeness.
-     */
-    private boolean canReachWithOrthSteps(C from, C to, int maxSteps)
-    {
-        // Simple BFS in up/down/left/right directions
-        Set<C> visited = new HashSet<>();
-        Queue<C> queue = new LinkedList<>();
-        queue.add(from);
-        visited.add(from);
-
-        int steps = 0;
-        while (!queue.isEmpty() && steps <= maxSteps)
-        {
-            int size = queue.size();
-            // We'll increment steps each "ring" of BFS
-            for (int i = 0; i < size; i++) {
-                C current = queue.poll();
-                if (current.equals(to)) {
-                    return true;
-                }
-                // Check the 4 orth neighbors
-                int r = current.getRow();
-                int cCol = current.getColumn();
-
-                List<C> neighbors = List.of(
-                        (C) new CoordinateImpl(r + 1, cCol),
-                        (C) new CoordinateImpl(r - 1, cCol),
-                        (C) new CoordinateImpl(r, cCol + 1),
-                        (C) new CoordinateImpl(r, cCol - 1)
-                );
-
-                for (C neigh : neighbors) {
-                    if (isValidCoordinate(neigh) && !visited.contains(neigh)) {
-
-                        // If there's a piece in 'neigh', block it for non-flyers
-                        if (board.getPieceAt(neigh) != null) {
-                            // cannot pass through occupant squares
-                            continue;  // <--- NEW LINE
-                        }
-
-                        visited.add(neigh);
-                        queue.add(neigh);
+            else {
+                // Unsupported movement pattern for square board.
+                return false;
+            }
+            // Check distance.
+            if (Math.max(Math.abs(rowDiff), Math.abs(colDiff)) > maxDist) {
+                return false;
+            }
+            // If the piece cannot fly, ensure intermediate squares are clear
+            if (!piece.canFly()) {
+                int steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+                int stepRow = (steps == 0) ? 0 : rowDiff / steps;
+                int stepCol = (steps == 0) ? 0 : colDiff / steps;
+                int currRow = from.getRow();
+                int currCol = from.getColumn();
+                for (int i = 1; i < steps; i++) {
+                    currRow += stepRow;
+                    currCol += stepCol;
+                    Coordinate intermediate = new CoordinateImpl(currRow, currCol);
+                    // Cannot pass over BLOCK or EXIT.
+                    LocationType lt = board.getLocationType(intermediate);
+                    if (lt == LocationType.BLOCK || lt == LocationType.EXIT) {
+                        return false;
+                    }
+                    if (board.getPieceAt(intermediate) != null) {
+                        return false;
                     }
                 }
             }
-            steps++;
+            return true;
+        }
+        else if (coordinateType == Coordinate.CoordinateType.HEX) {
+            // For HEX boards, we assume LINEAR movement.
+            // Define six hex directions.
+            int[][] hexDirs = { {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0} };
+            boolean validDir = false;
+            int steps = 0;
+            for (int[] d : hexDirs) {
+                // Check if the move is along this direction.
+                if (d[0] != 0) {
+                    double factor = (double) rowDiff / d[0];
+                    if (factor > 0 && Math.abs(factor - Math.round(factor)) < 0.0001) {
+                        if (d[1] * Math.round(factor) == colDiff) {
+                            validDir = true;
+                            steps = (int)Math.round(factor);
+                            break;
+                        }
+                    }
+                } else if (d[1] != 0) {
+                    double factor = (double) colDiff / d[1];
+                    if (factor > 0 && Math.abs(factor - Math.round(factor)) < 0.0001) {
+                        if (d[0] * Math.round(factor) == rowDiff) {
+                            validDir = true;
+                            steps = (int)Math.round(factor);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!validDir || steps > maxDist) {
+                return false;
+            }
+            // For non-flyers, check intermediate squares.
+            if (!piece.canFly()) {
+                int stepRow = rowDiff / steps;
+                int stepCol = colDiff / steps;
+                int currRow = from.getRow();
+                int currCol = from.getColumn();
+                for (int i = 1; i < steps; i++) {
+                    currRow += stepRow;
+                    currCol += stepCol;
+                    Coordinate intermediate = new CoordinateImpl(currRow, currCol);
+                    LocationType lt = board.getLocationType(intermediate);
+                    if (lt == LocationType.BLOCK || lt == LocationType.EXIT) {
+                        return false;
+                    }
+                    if (board.getPieceAt(intermediate) != null) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         return false;
+    }
+
+    /**
+     * Check game-end conditions using rule descriptors.
+     * For example, if a rule with ruleId SCORE exists and the current player's score
+     * is at or above its ruleValue, then the current player wins.
+     */
+    private GameStatus.MoveResult checkGameEnd(String currentPlayer)
+    {
+        if (ruleDescriptors != null) {
+            for (RuleDescriptor rd : ruleDescriptors) {
+                if (rd.ruleId == Rule.RuleID.SCORE) {
+                    int targetScore = rd.ruleValue;
+                    if (scores.getOrDefault(currentPlayer, 0) >= targetScore) {
+                        return GameStatus.MoveResult.WIN;
+                    }
+                }
+                // Additional rules (e.g., no moves available, tie) can be added here.
+            }
+        }
+        return GameStatus.MoveResult.NONE;
     }
 
     // --- Getters if needed ---

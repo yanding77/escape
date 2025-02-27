@@ -37,4 +37,5 @@ These are for implementing the EscapeGameBuilder's `makeGameManager()` method.
 |  27   | Verify that the piece's distance attribute is correctly enforced                                | Test that moves exceeding the allowed distance are rejected.                                               |
 |  28   | Verify that the piece's fly attribute is recognized correctly                                   | Test that the FLY attribute permits bypassing intermediate obstructions.                                   |
 |  29   | Verify that attempting to move from an empty cell returns an invalid move                       | Check that if no piece exists at the starting coordinate, the move is invalid.                             |
+|  30   |                                                                                                 |                                                                                                            |
 

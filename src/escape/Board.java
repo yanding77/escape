@@ -8,15 +8,20 @@ import escape.required.EscapePiece;
 
 /**
  * Represents a SQUARE board that can be finite or infinite.
- * In milestone2, all locations are CLEAR, so no EXIT/BLOCK checks yet.
+ * For milestone3, an infinite board (xMax==0 and yMax==0) supports negative indices.
+ * Also supports special location types: CLEAR, BLOCK, EXIT.
  */
+
 public class Board
 {
-    private final int xMax;  // 0 => infinite in the x-dimension
-    private final int yMax;  // 0 => infinite in the y-dimension
+    private final int xMax;  // if 0, the board is infinite in x-dimension
+    private final int yMax;  // if 0, the board is infinite in y-dimension
 
-    // For an infinite board, store pieces in a map instead of a 2D array
+    // Map to hold pieces.
     private final Map<Coordinate, EscapePiece> pieceMap = new HashMap<>();
+
+    // Map to hold location types. Default for any location is CLEAR.
+    private final Map<Coordinate, LocationType> locationMap = new HashMap<>();
 
     public Board(int xMax, int yMax)
     {
@@ -25,29 +30,18 @@ public class Board
     }
 
     /**
-     * Check if (x, y) is in valid bounds.
-     * Milestone2: we allow "infinite" if xMax/yMax == 0.
-     * But x,y must be >= 1 (positive indices).
+     * Check if (x,y) is in bounds.
+     * For infinite boards (xMax==0 and yMax==0), any integer coordinate is allowed.
+     * For finite boards, we assume positive indices (>=1) and x <= xMax, y <= yMax.
      */
     public boolean isInBounds(int x, int y)
     {
-        // Must be positive
+        if (xMax == 0 && yMax == 0) {
+            return true; // infinite board: allow negatives and positives
+        }
         if (x < 1 || y < 1) {
             return false;
         }
-        // infinite in both directions
-        if (xMax == 0 && yMax == 0) {
-            return true;
-        }
-        // infinite in x only
-        if (xMax == 0 && yMax > 0) {
-            return (y <= yMax);
-        }
-        // infinite in y only
-        if (yMax == 0 && xMax > 0) {
-            return (x <= xMax);
-        }
-        // finite board
         return (x <= xMax && y <= yMax);
     }
 
@@ -64,5 +58,21 @@ public class Board
     public void removePieceAt(Coordinate c)
     {
         pieceMap.remove(c);
+    }
+
+    /**
+     * Get the type of a location; if none is set, assume CLEAR.
+     */
+    public LocationType getLocationType(Coordinate c)
+    {
+        return locationMap.getOrDefault(c, LocationType.CLEAR);
+    }
+
+    /**
+     * Set a special location type at the given coordinate.
+     */
+    public void setLocationType(Coordinate c, LocationType type)
+    {
+        locationMap.put(c, type);
     }
 }
