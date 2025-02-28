@@ -3,6 +3,7 @@ package escape;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import escape.required.Coordinate;
 import escape.required.EscapePiece;
@@ -79,5 +80,9 @@ public class Board
     public Collection<EscapePiece> getAllPieces() {
         return pieceMap.values();
     }
+    public Set<Coordinate> getAllCoordinates() {
+        return pieceMap.keySet();
+    }
+
 
 }
