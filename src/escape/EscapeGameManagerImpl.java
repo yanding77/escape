@@ -281,15 +281,22 @@ public class EscapeGameManagerImpl<C extends Coordinate> implements EscapeGameMa
                 int stepRow = (steps == 0) ? 0 : rowDiff / steps;
                 int stepCol = (steps == 0) ? 0 : colDiff / steps;
                 int currRow = from.getRow(), currCol = from.getColumn();
+                int occupiedCount = 0;
                 for (int i = 1; i < steps; i++) {
                     currRow += stepRow;
                     currCol += stepCol;
                     Coordinate intermediate = new CoordinateImpl(currRow, currCol);
-                    // JUMP: ignore occupied squares but not BLOCK.
+                    // If a BLOCK is encountered, the move is invalid.
                     if (board.getLocationType(intermediate) == LocationType.BLOCK) return false;
+                    // Count occupied squares.
+                    if (board.getPieceAt(intermediate) != null) {
+                        occupiedCount++;
+                        if (occupiedCount > 1) return false; // Can't jump over more than one consecutive piece.
+                    }
                 }
                 return true;
-            } else {
+            }
+            else {
                 // Regular piece: all intermediate squares must be unoccupied and not BLOCK.
                 int steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
                 int stepRow = (steps == 0) ? 0 : rowDiff / steps;

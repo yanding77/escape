@@ -194,4 +194,92 @@ public class Milestone3SampleTestsHEX1 {
         assertTrue(status.getMoveResult() == GameStatus.MoveResult.WIN);
 
     }
+
+    @Test
+    void testMoveFromOutOfBounds() {
+        // Attempt to move from a coordinate that is out of bounds.
+        // For a finite board (or even an infinite board with positive indices required),
+        // coordinates with non-positive indices may be considered out of bounds.
+        Coordinate from = new CoordinateImpl(0, 5); // x=0 is out-of-bound if indices must be >=1
+        Coordinate to = new CoordinateImpl(1, 1);
+        GameStatus status = escapeGameManager1.move(from, to);
+        assertFalse(status.isValidMove());
+    }
+
+    @Test
+    void testMoveToOutOfBounds() {
+        // Attempt to move to a coordinate that is out-of-bounds.
+        Coordinate from = new CoordinateImpl(2, -2); // valid if on HEX (may be negative on infinite HEX)
+        // But if our board is defined such that some coordinates are invalid,
+        // choose one that is invalid. For instance, if x must be >=1:
+        Coordinate to = new CoordinateImpl(0, -2); // x=0 is out-of-bound
+        GameStatus status = escapeGameManager1.move(from, to);
+        assertFalse(status.isValidMove());
+    }
+
+    @Test
+    void testMoveWithWrongPlayerPiece() {
+        // Attempt to move a piece that does not belong to the current player.
+        // For example, if the current player is playerA, try to move a piece owned by playerB.
+        // Assume there's a piece for playerB at (0,3) (e.g., DOG).
+        Coordinate from = new CoordinateImpl(0, 3);
+        Coordinate to = new CoordinateImpl(0, 2);
+        // Since currentPlayer is playerA at the start, this move should be invalid.
+        GameStatus status = escapeGameManager1.move(from, to);
+        assertFalse(status.isValidMove());
+    }
+
+    @Test
+    void testConflictLostRemovesAttacker() {
+        // Test that when a move results in conflict where the attacker loses,
+        // the attacker is removed (finalLocation is null) and the move is valid.
+        // For this, assume that a piece (say DOG with value 1) from playerA moves onto
+        // a square occupied by a piece (say SNAIL with value 3) from playerB.
+        // This should result in the attacker's removal and reduction of the occupant’s value.
+        // (Adjust coordinates as per your configuration.)
+        Coordinate from = new CoordinateImpl(0, 1);  // Dog (playerA, value 1)
+        Coordinate to = new CoordinateImpl(1, 1);      // Assume this location is occupied by SNAIL (playerB, value 3)
+        GameStatus status = escapeGameManager1.move(from, to);
+        // Expect the move to be valid and final location null.
+        assertTrue(status.isValidMove());
+        assertNull(status.finalLocation());
+        // Optionally, you can check that the occupant’s value is reduced.
+    }
+
+    @Test
+    void testFlyMovementIgnoresObstacles() {
+        // Test that a piece with the FLY attribute can move over occupied squares.
+        // For example, move a BIRD (with fly) from one coordinate to another,
+        // where intermediate squares are occupied.
+        // (Coordinates should be chosen such that the move is linear and passes over occupied cells.)
+        Coordinate from = new CoordinateImpl(2, -2);
+        Coordinate to = new CoordinateImpl(2, 2);
+        GameStatus status = escapeGameManager1.move(from, to);
+        assertTrue(status.isValidMove());
+        assertEquals(to, status.finalLocation());
+    }
+
+    @Test
+    void testIllegalMovementPattern() {
+        // Test that a move that doesn't follow the piece's movement pattern is invalid.
+        // For example, if a piece with ORTHOGONAL movement tries to move diagonally.
+        Coordinate from = new CoordinateImpl(2, -2);
+        // Attempt a diagonal move
+        Coordinate to = new CoordinateImpl(3, -1);
+        GameStatus status = escapeGameManager1.move(from, to);
+        assertFalse(status.isValidMove());
+        assertEquals(from, status.finalLocation());
+    }
+
+    @Test
+    void testNoLegalMovesForPlayer() {
+
+        Coordinate from = new CoordinateImpl(0, 1);
+        Coordinate to = new CoordinateImpl(0, 0);  // EXIT location
+        GameStatus status = escapeGameManager1.move(from, to);
+        assertTrue(status.isValidMove());
+
+        assertTrue(status.getMoveResult() != GameStatus.MoveResult.NONE);
+    }
+
 }

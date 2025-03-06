@@ -5,9 +5,10 @@ import escape.required.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+
 
 
 public class Milestone4SampleTestsHEX2 {
@@ -140,9 +141,23 @@ public class Milestone4SampleTestsHEX2 {
 
     private void printMessages(MasterTestObserver observer, int n) {
         while (observer.messageCount() > 0) {
-            System.err.println( n + " - MESSAGE from observer "
+            System.err.println(n + " - MESSAGE from observer "
                     + " : " + observer.nextMessage().getMessage());
         }
     }
 
-}
+
+    // Test that a piece with JUMP cannot jump over more than one consecutive occupied square.
+    @Test
+    void testInvalidJumpOverMultiplePieces() {
+        // Assume FROG has JUMP (and no FLY), and in this scenario there are two consecutive pieces in its path.
+        // For instance, Frog from (4,4) tries to jump to (7,7), but two squares in between are occupied.
+        Coordinate from = new CoordinateImpl(4, 4);
+        Coordinate to = new CoordinateImpl(7, 7);
+        GameStatus status = escapeGameManager2.move(from, to);
+        // The move should be invalid because Frog cannot jump over more than one consecutive piece.
+        assertFalse(status.isValidMove(), "Frog should not be allowed to jump over more than one consecutive piece.");
+        assertEquals(from, status.finalLocation());
+    }}
+
+    // Test conflict draw: when attacker and defender have equal value, both exit.
