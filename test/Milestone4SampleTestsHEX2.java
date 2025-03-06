@@ -1,8 +1,7 @@
 import escape.EscapeGameManager;
-import escape.EscapeGameManagerImpl;
 import escape.builder.EscapeGameBuilder;
-import escape.coordinate.CoordinateImpl;
-import escape.required.GameStatus;
+import escape.*;
+import escape.required.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,7 @@ public class Milestone4SampleTestsHEX2 {
 
     @BeforeEach
     void setup() throws Exception {
-        escapeGameManager2 = new EscapeGameBuilder("/configurations/milestone4SampleHEX2.egc").makeGameManager();
+        escapeGameManager2 = new EscapeGameBuilder("./configurations/milestone4SampleHEX2.egc").makeGameManager();
 
     }
 

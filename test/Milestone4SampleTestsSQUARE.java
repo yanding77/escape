@@ -1,10 +1,7 @@
 import escape.EscapeGameManager;
 import escape.builder.EscapeGameBuilder;
-import escape.coordinate.CoordinateImpl;
-import escape.required.Coordinate;
-import escape.required.EscapePiece;
-import escape.required.EscapePiece.PieceName;
-import escape.required.GameStatus;
+import escape.*;
+import escape.required.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +19,7 @@ public class Milestone4SampleTestsSQUARE {
 
     @BeforeEach
     void setup() throws Exception {
-        escapeGameManager = new EscapeGameBuilder("/configurations/milestone4SampleSQUARE.egc").makeGameManager();
+        escapeGameManager = new EscapeGameBuilder("./configurations/milestone4SampleSQUARE.egc").makeGameManager();
     }
 
     public Milestone4SampleTestsSQUARE() {

@@ -192,5 +192,6 @@ public class Milestone3SampleTestsHEX1 {
         assertTrue(status.isValidMove());
         // current player (playerB) wins
         assertTrue(status.getMoveResult() == GameStatus.MoveResult.WIN);
+
     }
 }

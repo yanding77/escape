@@ -3,51 +3,39 @@ package escape;
 import escape.required.Coordinate;
 import escape.required.GameStatus;
 
-/**
- * Basic implementation of the GameStatus interface for milestone2.
- */
-public class GameStatusImpl implements GameStatus
-{
+public class GameStatusImpl implements GameStatus {
     private final boolean validMove;
     private final MoveResult moveResult;
     private final Coordinate finalLocation;
+    private final boolean moreInfo;
 
-    /**
-     * @param validMove   Whether the last move was valid
-     * @param moveResult  For milestone2, always NONE
-     * @param finalLocation The piece's final location
-     */
-    public GameStatusImpl(boolean validMove, MoveResult moveResult, Coordinate finalLocation)
-    {
+
+    public GameStatusImpl(boolean validMove, MoveResult moveResult, Coordinate finalLocation, boolean moreInfo) {
         this.validMove = validMove;
         this.moveResult = moveResult;
         this.finalLocation = finalLocation;
+        this.moreInfo = moreInfo;
+
     }
 
     @Override
-    public boolean isValidMove()
-    {
+    public boolean isValidMove() {
         return validMove;
     }
 
-    /**
-     * Milestone2: Always false (no additional info).
-     */
     @Override
-    public boolean isMoreInformation()
-    {
-        return false;
+    public boolean isMoreInformation() {
+        // In Milestone4, if observers are notified, you may return true.
+        return moreInfo;
     }
 
     @Override
-    public MoveResult getMoveResult()
-    {
+    public MoveResult getMoveResult() {
         return moveResult;
     }
 
     @Override
-    public Coordinate finalLocation()
-    {
+    public Coordinate finalLocation() {
         return finalLocation;
     }
 }

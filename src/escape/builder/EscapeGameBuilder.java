@@ -13,39 +13,30 @@ import javax.xml.transform.stream.*;
 import java.io.*;
 import java.util.*;
 
-public class EscapeGameBuilder
-{
+public class EscapeGameBuilder {
 	private final EscapeGameInitializer gameInitializer;
 
-	public EscapeGameBuilder(String fileName) throws Exception
-	{
+	public EscapeGameBuilder(String fileName) throws Exception {
 		String xmlConfiguration = getXmlConfiguration(fileName);
 		gameInitializer = unmarshalXml(xmlConfiguration);
 	}
 
-	private String getXmlConfiguration(String fileName) throws IOException
-	{
+	private String getXmlConfiguration(String fileName) throws IOException {
 		EscapeConfigurator configurator = new EscapeConfigurator();
 		return configurator.makeConfiguration(CharStreams.fromFileName(fileName));
 	}
 
-	private EscapeGameInitializer unmarshalXml(String xmlConfiguration) throws JAXBException
-	{
+	private EscapeGameInitializer unmarshalXml(String xmlConfiguration) throws JAXBException {
 		JAXBContext contextObj = JAXBContext.newInstance(EscapeGameInitializer.class);
 		Unmarshaller mub = contextObj.createUnmarshaller();
 		return (EscapeGameInitializer) mub.unmarshal(new StreamSource(new StringReader(xmlConfiguration)));
 	}
 
-	public EscapeGameInitializer getGameInitializer()
-	{
+	public EscapeGameInitializer getGameInitializer() {
 		return gameInitializer;
 	}
 
-	/**
-	 * Create the EscapeGameManager from the parsed configuration.
-	 */
-	public EscapeGameManager makeGameManager()
-	{
+	public EscapeGameManager makeGameManager() {
 		if (gameInitializer == null) {
 			throw new EscapeException("Game initializer is not properly loaded.");
 		}
@@ -55,15 +46,12 @@ public class EscapeGameBuilder
 		Coordinate.CoordinateType coordinateType = gameInitializer.getCoordinateType();
 		List<String> players = gameInitializer.getPlayers();
 
-		// Build the board.
 		Board board = new Board(xMax, yMax);
 
 		// Process location initializers.
 		if (gameInitializer.getLocationInitializers() != null) {
 			for (LocationInitializer loc : gameInitializer.getLocationInitializers()) {
 				Coordinate coord = new CoordinateImpl(loc.x, loc.y);
-
-				// If location initializer has a pieceName and player, place the piece.
 				if (loc.pieceName != null && loc.player != null) {
 					PieceTypeDescriptor desc = null;
 					if (gameInitializer.getPieceTypes() != null) {
@@ -79,9 +67,7 @@ public class EscapeGameBuilder
 					}
 					EscapePieceImpl piece = new EscapePieceImpl(loc.player, desc);
 					board.putPieceAt(piece, coord);
-				}
-				// Otherwise, if a special location type is provided, set it on the board.
-				else if (loc.locationType != null) {
+				} else if (loc.locationType != null) {
 					board.setLocationType(coord, escape.LocationType.valueOf(loc.locationType.name()));
 				}
 			}
@@ -90,8 +76,6 @@ public class EscapeGameBuilder
 		RuleDescriptor[] ruleDescriptors = gameInitializer.getRules();
 		return new EscapeGameManagerImpl<>(xMax, yMax, coordinateType, players, board, buildPieceTypes(), ruleDescriptors);
 	}
-
-
 
 	private Map<PieceName, PieceTypeDescriptor> buildPieceTypes() {
 		Map<PieceName, PieceTypeDescriptor> pieceTypes = new HashMap<>();

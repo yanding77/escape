@@ -1,10 +1,8 @@
 package escape;
 
 import escape.required.Coordinate;
+import java.util.Objects;
 
-/**
- * Implementation of the Coordinate interface.
- */
 public class CoordinateImpl implements Coordinate {
     private final int row;
     private final int column;
@@ -31,10 +29,14 @@ public class CoordinateImpl implements Coordinate {
         CoordinateImpl that = (CoordinateImpl) obj;
         return row == that.row && column == that.column;
     }
+
     @Override
     public int hashCode() {
-        return 31 * row + column;
+        return Objects.hash(row, column);
+    }
+
+    @Override
+    public String toString() {
+        return "CoordinateImpl{" + "row=" + row + ", column=" + column + '}';
     }
 }
-
-

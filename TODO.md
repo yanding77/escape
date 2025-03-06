@@ -53,4 +53,6 @@ These are for implementing the EscapeGameBuilder's `makeGameManager()` method.
 |  43   | Verify that moves not matching the piece’s movement pattern (e.g., orthogonal vs. diagonal) are rejected on a SQUARE board	 | Use orthogonalInvalidDiagonal and diagonalInvalidOrthogonal tests from SQUARE.                             |
 |  44   | Verify that turn order remains unchanged after an invalid move on a SQUARE board	                                           | Add a test that makes an invalid move and then checks that the same player is still active.                |
 |  45   | Verify that multiple sequential moves on a SQUARE board update the game state consistently	                                 | Add a test simulating a series of moves to check overall game state consistency.                           |
+|       |                                                                                                                             |                                                                                                            |
+|       |                                                                                                                             |                                                                                                            |
 
