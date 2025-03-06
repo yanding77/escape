@@ -1,0 +1,31 @@
+Coordinate type: HEX
+xMax : 7
+yMax : 8
+
+Players: playerA playerB
+
+Locations:
+    /* Player A */
+    (5, 1) playerA snail
+    (4,5) playerA dog
+
+    /* Player B */
+    (1, 4) playerB bird
+    (1, 8) playerB horse
+
+    /* BLOCK */
+    (1, 7) block
+    (2, 8) block
+
+
+    /* EXIT */
+    (1, 1) exit
+
+Piece descriptors:
+    horse LINEAR [distance 7, value 3]
+    bird LINEAR [distance 4, value 4, fly]
+    dog LINEAR [distance 5]
+    snail LINEAR [distance 4, value 1]
+
+Rules:
+	SCORE 5
